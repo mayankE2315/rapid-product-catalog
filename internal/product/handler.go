@@ -82,10 +82,9 @@ func validateProducts(products []Product) *types.StatusError {
 func buildErrorResponse(err *types.StatusError) types.ErrorResponse {
 	return types.ErrorResponse{
 		Error: types.Error{
-			Message:        err.Message,
-			Code:           err.Code,
-			DisplayMessage: err.Message,
-			Status:         "error",
+			Message: err.Message,
+			Code:    err.Code,
+			Status:  "error",
 		},
 	}
 }

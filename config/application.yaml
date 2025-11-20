@@ -1,0 +1,26 @@
+log:
+  level: debug
+
+server:
+  host: localhost
+  port: 8080
+
+environment: local
+
+profilingEnabled: false
+
+datastores:
+  testDB:
+    hosts: mongodb-v6-0-1.db.backend.staging.internal:27017,mongodb-v6-0-2.db.backend.staging.internal:27017,mongodb-v6-0-3.db.backend.staging.internal:27017
+    port: 27017
+    user: root
+    password: password
+    database: TestDb
+    authSource: admin
+    replicaSet:
+    appName: TestDb
+    options:
+      maxPoolSize: 20
+      minPoolSize: 5
+      idleTimeout: 30
+      connectionTimeout: 5

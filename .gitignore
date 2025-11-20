@@ -5,4 +5,3 @@ artifacts/
 out/
 .idea/*
 coverage-all.out
-config/
