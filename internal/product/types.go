@@ -11,7 +11,7 @@ type Product struct {
 	Name        string             `json:"name" binding:"required" bson:"name"`
 	Category    string             `json:"category" binding:"required" bson:"category"`
 	Brand       string             `json:"brand" binding:"required" bson:"brand"`
-	Price       float64            `json:"price" binding:"required,min=0" bson:"price"`
+	Price       float64            `json:"price" binding:"required,gt=0" bson:"price"`
 	Description string             `json:"description" binding:"required" bson:"description"`
 	Images      []string           `json:"images" binding:"required" bson:"images"`
 	Inventory   int                `json:"inventory" binding:"required,min=0" bson:"availableQty"`

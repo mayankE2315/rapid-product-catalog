@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/roppenlabs/rapid-product-catalog/internal/types"
 	logger "github.com/roppenlabs/rapido-logger-go"
@@ -38,6 +39,12 @@ func (h *Handler) BulkCreateProductsHandler(ctx *gin.Context) {
 		return
 	}
 
+	if validationErr := validateProducts(req.Products); validationErr != nil {
+		logger.Error(logger.Format{Message: validationErr.Error()})
+		ctx.JSON(http.StatusBadRequest, buildErrorResponse(validationErr))
+		return
+	}
+
 	response, err := h.service.BulkCreateProducts(context.Background(), req.Products)
 
 	if err != nil {
@@ -52,6 +59,24 @@ func (h *Handler) BulkCreateProductsHandler(ctx *gin.Context) {
 	}
 	logger.Info(logger.Format{Message: "Response for bulk create products", Data: map[string]string{"response": fmt.Sprintf("%+v", response)}})
 	ctx.JSON(http.StatusOK, response)
+}
+
+func validateProducts(products []Product) *types.StatusError {
+	for i, product := range products {
+		if strings.TrimSpace(product.Name) == "" {
+			return types.NewValidationError(fmt.Sprintf("Product at index %d: name cannot be empty", i))
+		}
+		if strings.TrimSpace(product.Category) == "" {
+			return types.NewValidationError(fmt.Sprintf("Product at index %d: category cannot be empty", i))
+		}
+		if strings.TrimSpace(product.Brand) == "" {
+			return types.NewValidationError(fmt.Sprintf("Product at index %d: brand cannot be empty", i))
+		}
+		if product.Price <= 0 {
+			return types.NewValidationError(fmt.Sprintf("Product at index %d: price must be greater than 0", i))
+		}
+	}
+	return nil
 }
 
 func buildErrorResponse(err *types.StatusError) types.ErrorResponse {
