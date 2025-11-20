@@ -6,6 +6,7 @@ import (
 
 	"github.com/roppenlabs/rapid-product-catalog/internal/types"
 	"github.com/roppenlabs/rapid-product-catalog/internal/utils"
+	logger "github.com/roppenlabs/rapido-logger-go"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -55,7 +56,13 @@ func (r *repositoryImpl) CreateProducts(ctx context.Context, products []Product)
 
 		_, err := r.collection.UpdateOne(ctx, filter, update, upsertOptions)
 		if err != nil {
-			fmt.Printf("Error upserting product %s: %v\n", product.Name, err)
+			logger.Error(logger.Format{
+				Message: fmt.Sprintf("Error upserting product %s", product.Name),
+				Data: map[string]string{
+					"productName": product.Name,
+					"error":       err.Error(),
+				},
+			})
 			return nil, types.NewInternalServerError()
 		}
 
@@ -63,7 +70,13 @@ func (r *repositoryImpl) CreateProducts(ctx context.Context, products []Product)
 		var updatedProduct Product
 		err = r.collection.FindOne(ctx, filter).Decode(&updatedProduct)
 		if err != nil {
-			fmt.Printf("Error finding product %s after upsert: %v\n", product.Name, err)
+			logger.Error(logger.Format{
+				Message: fmt.Sprintf("Error finding product %s after upsert", product.Name),
+				Data: map[string]string{
+					"productName": product.Name,
+					"error":       err.Error(),
+				},
+			})
 			return nil, types.NewInternalServerError()
 		}
 

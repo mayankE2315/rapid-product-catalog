@@ -18,7 +18,7 @@ type DBInstance struct {
 }
 
 func NewDBInstance(conf config.Config) (*DBInstance, error) {
-	mongoConf := conf.Get().Datastores.CaptainEarningsDB
+	mongoConf := conf.Get().Datastores.TestDB
 
 	testDB, err := initDB(mongoConf)
 	if err != nil {
@@ -57,13 +57,12 @@ func initDB(conf config.MongoDB) (*mongo.Database, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("DB connected")
+	logger.Info(logger.Format{Message: "DB connected"})
 
 	if err := client.Ping(ctx, readpref.Primary()); err != nil {
 		return nil, err
 	}
-	fmt.Println("DB pinged")
-
+	logger.Info(logger.Format{Message: "DB pinged"})
 	return client.Database(conf.Database), nil
 }
 

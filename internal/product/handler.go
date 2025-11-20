@@ -24,6 +24,8 @@ func NewHandler(s Service) *Handler {
 func (h *Handler) BulkCreateProductsHandler(ctx *gin.Context) {
 	var req BulkCreateProductsRequest
 
+	logger.Info(logger.Format{Message: "Request received for bulk create products", Data: map[string]string{"request": fmt.Sprintf("%+v", req)}})
+
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		logger.Error(logger.Format{Message: fmt.Sprintf("Invalid request body: %v", err)})
 		ctx.JSON(http.StatusBadRequest, buildErrorResponse(types.NewValidationError(fmt.Sprintf("Invalid request: %v", err))))
@@ -48,6 +50,7 @@ func (h *Handler) BulkCreateProductsHandler(ctx *gin.Context) {
 		ctx.JSON(statusError.HTTPCode, buildErrorResponse(statusError))
 		return
 	}
+	logger.Info(logger.Format{Message: "Response for bulk create products", Data: map[string]string{"response": fmt.Sprintf("%+v", response)}})
 	ctx.JSON(http.StatusOK, response)
 }
 
