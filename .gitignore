@@ -1,0 +1,8 @@
+build-state.json
+skaffold.yaml
+*.checksum
+artifacts/
+out/
+.idea/*
+coverage-all.out
+config/

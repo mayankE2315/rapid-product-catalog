@@ -1,0 +1,8 @@
+package utils
+
+import "github.com/google/wire"
+
+var WireSet = wire.NewSet(
+	GetHTTPClient,
+	NewDBInstance,
+)
