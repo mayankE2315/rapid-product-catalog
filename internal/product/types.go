@@ -18,9 +18,45 @@ type Product struct {
 	Popularity  float64            `json:"popularity" binding:"required" bson:"popularity"`
 }
 
-type BulkCreateProductsResponse struct {
+type CreateProductsResponse struct {
+	Success    bool                 `json:"success"`
+	Message    string               `json:"message"`
+	Created    int                  `json:"created"`
+	Updated    int                  `json:"updated"`
+	ProductIDs []primitive.ObjectID `json:"productIds,omitempty"`
+}
+
+type PriceRange struct {
+	Min float64 `json:"min"`
+	Max float64 `json:"max"`
+}
+
+type SearchProductsRequest struct {
+	Category   interface{} `json:"category"` // Can be string or []string
+	Brand      interface{} `json:"brand"`    // Can be string or []string
+	PriceRange *PriceRange `json:"priceRange"`
+	Search     string      `json:"search"`
+}
+
+// SearchParams is the normalized internal representation used by the service
+type SearchParams struct {
+	Categories []string
+	Brands     []string
+	MinPrice   *float64
+	MaxPrice   *float64
+	SearchText string
+	Limit      int
+}
+
+type SearchProductsResponse struct {
 	Success  bool      `json:"success"`
 	Message  string    `json:"message"`
-	Created  int       `json:"created"`
-	Products []Product `json:"products,omitempty"`
+	Count    int       `json:"count"`
+	Products []Product `json:"products"`
+}
+
+type CreateProductsResult struct {
+	Created    int
+	Updated    int
+	ProductIDs []primitive.ObjectID
 }

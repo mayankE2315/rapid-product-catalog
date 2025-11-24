@@ -3,5 +3,6 @@ package product
 import "github.com/gin-gonic/gin"
 
 func (h *Handler) InitRoutes(router *gin.Engine) {
-	router.POST("/products/bulk", h.BulkCreateProductsHandler)
+	router.POST("/products/bulk", h.CreateProductsHandler)
+	router.POST("/products/search", h.SearchProductsHandler)
 }

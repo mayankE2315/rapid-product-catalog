@@ -56,17 +56,19 @@ func (mps *ProductUploadServiceTestSuite) TestShouldReturnSuccessWithValidProduc
 	}
 
 	mockRepo := new(MockRepository)
-	// Return products with IDs set to simulate database response
-	mockProducts := make([]Product, len(products))
-	copy(mockProducts, products)
-	mockProducts[0].ID = primitive.NewObjectID()
-	mockProducts[1].ID = primitive.NewObjectID()
-	mockRepo.On("CreateProducts", mock.Anything, products).Return(mockProducts, nil)
+	// Return result with IDs to simulate database response
+	mockResult := &CreateProductsResult{
+		ProductIDs: []primitive.ObjectID{primitive.NewObjectID(), primitive.NewObjectID()},
+		Created:    2,
+		Updated:    0,
+	}
+	mockRepo.On("CreateProducts", mock.Anything, products).Return(mockResult, nil)
 
 	testService := NewService(mps.config, mockRepo)
 	resp, err := testService.BulkCreateProducts(context.Background(), products)
 
 	assert.Nil(mps.T(), err)
 	assert.Equal(mps.T(), 2, resp.Created)
-	assert.Equal(mps.T(), len(products), len(resp.Products))
+	assert.Equal(mps.T(), 0, resp.Updated)
+	assert.Equal(mps.T(), 2, len(resp.ProductIDs))
 }

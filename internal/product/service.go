@@ -5,10 +5,12 @@ import (
 	"fmt"
 
 	"github.com/roppenlabs/rapid-product-catalog/internal/config"
+	logger "github.com/roppenlabs/rapido-logger-go"
 )
 
 type Service interface {
-	BulkCreateProducts(ctx context.Context, products []Product) (BulkCreateProductsResponse, error)
+	BulkCreateProducts(ctx context.Context, products []Product) (CreateProductsResponse, error)
+	SearchProducts(ctx context.Context, params SearchParams) (SearchProductsResponse, error)
 }
 
 type serviceImpl struct {
@@ -24,17 +26,38 @@ func NewService(cfg config.Config, repo Repository) Service {
 	return service
 }
 
-func (s *serviceImpl) BulkCreateProducts(ctx context.Context, products []Product) (BulkCreateProductsResponse, error) {
-	updatedProducts, err := s.repository.CreateProducts(ctx, products)
+func (s *serviceImpl) BulkCreateProducts(ctx context.Context, products []Product) (CreateProductsResponse, error) {
+	result, err := s.repository.CreateProducts(ctx, products)
 	if err != nil {
-		return BulkCreateProductsResponse{}, err
+		return CreateProductsResponse{}, err
 	}
 
-	response := BulkCreateProductsResponse{
-		Success:  true,
-		Message:  fmt.Sprintf("Successfully processed %d products (created or updated)", len(updatedProducts)),
-		Created:  len(updatedProducts),
-		Products: updatedProducts,
+	totalProcessed := result.Created + result.Updated
+	response := CreateProductsResponse{
+		Success:    true,
+		Message:    fmt.Sprintf("Successfully processed %d products (%d created, %d updated)", totalProcessed, result.Created, result.Updated),
+		Created:    result.Created,
+		Updated:    result.Updated,
+		ProductIDs: result.ProductIDs,
 	}
+	return response, nil
+}
+
+func (s *serviceImpl) SearchProducts(ctx context.Context, params SearchParams) (SearchProductsResponse, error) {
+
+	logger.Info(logger.Format{Message: "Searching products", Data: map[string]string{"params": fmt.Sprintf("%+v", params)}})
+
+	products, err := s.repository.SearchProducts(ctx, params.Categories, params.Brands, params.MinPrice, params.MaxPrice, params.SearchText, params.Limit)
+	if err != nil {
+		return SearchProductsResponse{}, err
+	}
+
+	response := SearchProductsResponse{
+		Success:  true,
+		Message:  fmt.Sprintf("Found %d products", len(products)),
+		Count:    len(products),
+		Products: products,
+	}
+
 	return response, nil
 }
