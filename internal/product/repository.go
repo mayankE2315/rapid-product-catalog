@@ -15,6 +15,7 @@ import (
 type Repository interface {
 	CreateProducts(ctx context.Context, products []Product) (*CreateProductsResult, error)
 	SearchProducts(ctx context.Context, categories []string, brands []string, minPrice, maxPrice *float64, searchText string, limit int) ([]Product, error)
+	GetProductByID(ctx context.Context, productID primitive.ObjectID) (*Product, error)
 }
 
 type repositoryImpl struct {
@@ -39,19 +40,16 @@ func (r *repositoryImpl) CreateProducts(ctx context.Context, products []Product)
 		}, nil
 	}
 
-	// Build bulk write operations
 	models := make([]mongo.WriteModel, 0, len(products))
 	productFilters := make([]bson.M, 0, len(products))
 
 	for _, product := range products {
-		// Filter by name and category to find existing product
 		filter := bson.M{
 			"name":     product.Name,
 			"category": product.Category,
 		}
 		productFilters = append(productFilters, filter)
 
-		// Update document - update all fields except ID (preserve existing ID)
 		update := bson.M{
 			"$set": bson.M{
 				"name":         product.Name,
@@ -65,7 +63,6 @@ func (r *repositoryImpl) CreateProducts(ctx context.Context, products []Product)
 			},
 		}
 
-		// Create UpdateOneModel with upsert option
 		updateModel := mongo.NewUpdateOneModel().
 			SetFilter(filter).
 			SetUpdate(update).
@@ -74,7 +71,6 @@ func (r *repositoryImpl) CreateProducts(ctx context.Context, products []Product)
 		models = append(models, updateModel)
 	}
 
-	// Execute bulk write operation
 	bulkWriteOptions := options.BulkWrite().SetOrdered(false)
 	bulkResult, err := r.collection.BulkWrite(ctx, models, bulkWriteOptions)
 	if err != nil {
@@ -87,10 +83,8 @@ func (r *repositoryImpl) CreateProducts(ctx context.Context, products []Product)
 		return nil, types.NewInternalServerError()
 	}
 
-	// Fetch all products that were inserted/updated to get their IDs
 	var updatedProducts []Product
 	if len(productFilters) > 0 {
-		// Build a query to fetch all products using $or with all filters
 		findFilter := bson.M{
 			"$or": productFilters,
 		}
@@ -204,4 +198,23 @@ func (r *repositoryImpl) SearchProducts(ctx context.Context, categories []string
 	}
 
 	return products, nil
+}
+
+func (r *repositoryImpl) GetProductByID(ctx context.Context, productID primitive.ObjectID) (*Product, error) {
+	var product Product
+	err := r.collection.FindOne(ctx, bson.M{"_id": productID}).Decode(&product)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, types.NewNotFoundError("Product not found")
+		}
+		logger.Error(logger.Format{
+			Message: "Error fetching product by ID",
+			Data: map[string]string{
+				"error":     err.Error(),
+				"productID": productID.Hex(),
+			},
+		})
+		return nil, types.NewInternalServerError()
+	}
+	return &product, nil
 }

@@ -5,12 +5,15 @@ import (
 	"fmt"
 
 	"github.com/roppenlabs/rapid-product-catalog/internal/config"
+	"github.com/roppenlabs/rapid-product-catalog/internal/types"
 	logger "github.com/roppenlabs/rapido-logger-go"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Service interface {
 	BulkCreateProducts(ctx context.Context, products []Product) (CreateProductsResponse, error)
 	SearchProducts(ctx context.Context, params SearchParams) (SearchProductsResponse, error)
+	GetProductByID(ctx context.Context, productID primitive.ObjectID) (*Product, error)
 }
 
 type serviceImpl struct {
@@ -52,6 +55,10 @@ func (s *serviceImpl) SearchProducts(ctx context.Context, params SearchParams) (
 		return SearchProductsResponse{}, err
 	}
 
+	if len(products) == 0 {
+		return SearchProductsResponse{}, types.NewNotFoundError("No products found matching the search criteria")
+	}
+
 	response := SearchProductsResponse{
 		Success:  true,
 		Message:  fmt.Sprintf("Found %d products", len(products)),
@@ -60,4 +67,15 @@ func (s *serviceImpl) SearchProducts(ctx context.Context, params SearchParams) (
 	}
 
 	return response, nil
+}
+
+func (s *serviceImpl) GetProductByID(ctx context.Context, productID primitive.ObjectID) (*Product, error) {
+	logger.Info(logger.Format{Message: "Fetching product by ID", Data: map[string]string{"productID": productID.Hex()}})
+
+	product, err := s.repository.GetProductByID(ctx, productID)
+	if err != nil {
+		return nil, err
+	}
+
+	return product, nil
 }

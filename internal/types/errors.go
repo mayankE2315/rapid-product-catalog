@@ -27,3 +27,11 @@ func NewInternalServerError() *StatusError {
 		HTTPCode: http.StatusInternalServerError,
 	}
 }
+
+func NewNotFoundError(message string) *StatusError {
+	return &StatusError{
+		Message:  message,
+		Code:     "not_found",
+		HTTPCode: http.StatusNotFound,
+	}
+}

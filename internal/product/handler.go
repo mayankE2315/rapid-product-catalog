@@ -8,6 +8,7 @@ import (
 
 	"github.com/roppenlabs/rapid-product-catalog/internal/types"
 	logger "github.com/roppenlabs/rapido-logger-go"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/gin-gonic/gin"
 )
@@ -90,6 +91,34 @@ func (h *Handler) SearchProductsHandler(ctx *gin.Context) {
 
 	logger.Info(logger.Format{Message: "Response for search products", Data: map[string]string{"response": fmt.Sprintf("%+v", response)}})
 	ctx.JSON(http.StatusOK, response)
+}
+
+func (h *Handler) GetProductByIDHandler(ctx *gin.Context) {
+	productIDParam := ctx.Param("productId")
+
+	logger.Info(logger.Format{Message: "Request received for get product by ID", Data: map[string]string{"productId": productIDParam}})
+
+	productID, err := primitive.ObjectIDFromHex(productIDParam)
+	if err != nil {
+		logger.Error(logger.Format{Message: fmt.Sprintf("Invalid product ID format: %v", err)})
+		ctx.JSON(http.StatusBadRequest, buildErrorResponse(types.NewValidationError("Invalid product ID format")))
+		return
+	}
+
+	product, err := h.service.GetProductByID(context.Background(), productID)
+	if err != nil {
+		statusError, ok := err.(*types.StatusError)
+		if !ok {
+			serverError := types.NewInternalServerError()
+			ctx.JSON(http.StatusInternalServerError, buildErrorResponse(serverError))
+			return
+		}
+		ctx.JSON(statusError.HTTPCode, buildErrorResponse(statusError))
+		return
+	}
+
+	logger.Info(logger.Format{Message: "Response for get product by ID", Data: map[string]string{"response": fmt.Sprintf("%+v", product)}})
+	ctx.JSON(http.StatusOK, product)
 }
 
 func validateProducts(products []Product) *types.StatusError {
