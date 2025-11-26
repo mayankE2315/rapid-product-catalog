@@ -28,8 +28,8 @@ func InitDependencies() (ServerDependencies, error) {
 	service := product.NewService(configConfig, productRepository)
 	productHandler := product.NewHandler(service)
 	handlers := server.Handlers{
-		HealthHandler:        handler,
-		ProductUploadHandler: productHandler,
+		HealthHandler:  handler,
+		ProductHandler: productHandler,
 	}
 	serverDependencies := ServerDependencies{
 		config:   configConfig,

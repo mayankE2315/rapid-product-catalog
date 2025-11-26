@@ -28,7 +28,13 @@ func (mph *ProductUploadHandlerTestSuite) SetupTest() {
 	mph.service = new(MockService)
 	mph.server = testutils.NewServer()
 	mph.handler = NewHandler(mph.service)
-	mph.handler.InitRoutes(mph.server.Router())
+
+	// Register product routes directly
+	router := mph.server.Router()
+	router.POST("/products/bulk", mph.handler.CreateProductsHandler)
+	router.POST("/products/search", mph.handler.SearchProductsHandler)
+	router.GET("/products/:productId", mph.handler.GetProductByIDHandler)
+
 	logger.Init("debug")
 }
 
@@ -46,16 +52,16 @@ func (mph *ProductUploadHandlerTestSuite) TestShouldReturnSuccessWithValidInput(
 	}
 	requestBody := BulkCreateProductsRequest{Products: products}
 	expectedResponse := CreateProductsResponse{
-		Success:  true,
-		Message:  "Successfully processed 1 products (1 created, 0 updated)",
-		Created:  1,
-		Updated:  0,
+		Success: true,
+		Message: "Successfully processed 1 products (1 created, 0 updated)",
+		Created: 1,
+		Updated: 0,
 	}
 
 	mph.service.On("BulkCreateProducts", mock.Anything, products).Return(expectedResponse, nil)
 
 	requestBodyBytes, _ := json.Marshal(requestBody)
-	mph.server.PerformRequest("/products/bulk-create", "post", requestBodyBytes)
+	mph.server.PerformRequest("/products/bulk", "post", requestBodyBytes)
 	var actualResponse CreateProductsResponse
 	json.NewDecoder(mph.server.Recorder().Body).Decode(&actualResponse)
 
@@ -76,7 +82,7 @@ func (mph *ProductUploadHandlerTestSuite) TestShouldReturnErrorWhenProductsArray
 	}
 
 	requestBodyBytes, _ := json.Marshal(requestBody)
-	mph.server.PerformRequest("/products/bulk-create", "post", requestBodyBytes)
+	mph.server.PerformRequest("/products/bulk", "post", requestBodyBytes)
 	var actualResponse types.ErrorResponse
 	json.NewDecoder(mph.server.Recorder().Body).Decode(&actualResponse)
 
@@ -110,7 +116,7 @@ func (mph *ProductUploadHandlerTestSuite) TestShouldReturnErrorWhenExpectedError
 	mph.service.On("BulkCreateProducts", mock.Anything, products).Return(CreateProductsResponse{}, types.NewValidationError("Validation failed"))
 
 	requestBodyBytes, _ := json.Marshal(requestBody)
-	mph.server.PerformRequest("/products/bulk-create", "post", requestBodyBytes)
+	mph.server.PerformRequest("/products/bulk", "post", requestBodyBytes)
 	var actualResponse types.ErrorResponse
 	json.NewDecoder(mph.server.Recorder().Body).Decode(&actualResponse)
 
@@ -143,7 +149,7 @@ func (mph *ProductUploadHandlerTestSuite) TestShouldReturnServerErrorWhenRandomE
 	mph.service.On("BulkCreateProducts", mock.Anything, products).Return(CreateProductsResponse{}, errors.New("random error"))
 
 	requestBodyBytes, _ := json.Marshal(requestBody)
-	mph.server.PerformRequest("/products/bulk-create", "post", requestBodyBytes)
+	mph.server.PerformRequest("/products/bulk", "post", requestBodyBytes)
 	var actualResponse types.ErrorResponse
 	json.NewDecoder(mph.server.Recorder().Body).Decode(&actualResponse)
 

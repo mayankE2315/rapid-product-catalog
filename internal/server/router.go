@@ -9,14 +9,21 @@ import (
 )
 
 type Handlers struct {
-	HealthHandler        *health.Handler
-	ProductUploadHandler *product.Handler
+	HealthHandler  *health.Handler
+	ProductHandler *product.Handler
 }
 
 func (s *Server) InitRoutes(h Handlers, c config.Config) {
 	router := s.routerGroups.rootRouter
+
+	// Health routes
 	router.GET("/sanity", h.HealthHandler.CheckSanity)
 	router.GET("/health", h.HealthHandler.CheckHealth)
+
+	// Product routes
+	router.POST("/products/bulk", h.ProductHandler.CreateProductsHandler)
+	router.POST("/products/search", h.ProductHandler.SearchProductsHandler)
+	router.GET("/products/:productId", h.ProductHandler.GetProductByIDHandler)
 
 	// Register pprof handlers
 	if c.Get().ProfilingEnabled {
@@ -25,6 +32,4 @@ func (s *Server) InitRoutes(h Handlers, c config.Config) {
 		})
 		pprof.Register(router)
 	}
-
-	h.ProductUploadHandler.InitRoutes(router)
 }
